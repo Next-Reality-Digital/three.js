@@ -64,7 +64,7 @@ const ReinhardToneMapping = 2;
 const CineonToneMapping = 3;
 const ACESFilmicToneMapping = 4;
 const CustomToneMapping = 5;
-const LUTToneMapping$1 = 6;
+const LUTToneMapping = 6;
 const AttachedBindMode = 'attached';
 const DetachedBindMode = 'detached';
 
@@ -52278,7 +52278,7 @@ exports.InvertStencilOp = InvertStencilOp;
 exports.KeepStencilOp = KeepStencilOp;
 exports.KeyframeTrack = KeyframeTrack;
 exports.LOD = LOD;
-exports.LUTToneMapping = LUTToneMapping$1;
+exports.LUTToneMapping = LUTToneMapping;
 exports.LatheGeometry = LatheGeometry;
 exports.Layers = Layers;
 exports.LessCompare = LessCompare;
