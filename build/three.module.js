@@ -27251,22 +27251,6 @@ class WebXRManager extends EventDispatcher {
 
 			}
 
-			cameraVR.matrixWorld.decompose( cameraVR.position, cameraVR.quaternion, cameraVR.scale );
-
-			// update user camera and its children
-
-			camera.matrix.copy( cameraVR.matrix );
-			camera.matrix.decompose( camera.position, camera.quaternion, camera.scale );
-			camera.matrixWorld.copy( cameraVR.matrixWorld );
-
-			const children = camera.children;
-
-			for ( let i = 0, l = children.length; i < l; i ++ ) {
-
-				children[ i ].updateMatrixWorld( true );
-
-			}
-
 			// update projection matrix for proper view frustum culling
 
 			if ( cameras.length === 2 ) {
