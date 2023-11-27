@@ -22,11 +22,13 @@ function SidebarMaterialMapProperty( editor, property, name ) {
 
 	const mapType = property.replace( 'Map', '' );
 
+	const colorMaps = [ 'map', 'emissiveMap', 'sheenColorMap', 'specularColorMap', 'envMap' ];
+
 	let intensity;
 
 	if ( property === 'aoMap' ) {
 
-		intensity = new UINumber().setWidth( '30px' ).onChange( onIntensityChange );
+		intensity = new UINumber( 1 ).setWidth( '30px' ).setRange( 0, 1 ).onChange( onIntensityChange );
 		container.add( intensity );
 
 	}
@@ -55,7 +57,7 @@ function SidebarMaterialMapProperty( editor, property, name ) {
 	let rangeMin, rangeMax;
 
 	if ( property === 'iridescenceThicknessMap' ) {
-		
+
 		const range = new UIDiv().setMarginLeft( '3px' );
 		container.add( range );
 
@@ -111,9 +113,9 @@ function SidebarMaterialMapProperty( editor, property, name ) {
 
 		if ( texture !== null ) {
 
-			if ( texture.isDataTexture !== true && texture.encoding !== THREE.sRGBEncoding ) {
+			if ( colorMaps[ property ] !== undefined && texture.isDataTexture !== true && texture.colorSpace !== THREE.SRGBColorSpace ) {
 
-				texture.encoding = THREE.sRGBEncoding;
+				texture.colorSpace = THREE.SRGBColorSpace;
 				material.needsUpdate = true;
 
 			}
