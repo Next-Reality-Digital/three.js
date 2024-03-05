@@ -8,12 +8,14 @@ if ( self.GPUShaderStage === undefined ) {
 
 let isAvailable = navigator.gpu !== undefined;
 
+(async function() {
+	// Fix 'SyntaxError: await is only valid in async function' when using top level await
+	if ( typeof window !== 'undefined' && isAvailable ) {
 
-if ( typeof window !== 'undefined' && isAvailable ) {
-
-	isAvailable = await navigator.gpu.requestAdapter();
-
-}
+		isAvailable = await navigator.gpu.requestAdapter();
+	
+	}
+}())
 
 class WebGPU {
 
