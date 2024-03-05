@@ -27,6 +27,9 @@ const _zAxis = /*@__PURE__*/ new Vector3( 0, 0, 1 );
 const _addedEvent = { type: 'added' };
 const _removedEvent = { type: 'removed' };
 
+const _childaddedEvent = { type: 'childadded', child: null };
+const _childremovedEvent = { type: 'childremoved', child: null };
+
 const _zeroPos = new Vector3( 0, 0, 0 );
 const _zeroQuat = new Quaternion();
 const _oneScale = new Vector3( 1, 1, 1 );
@@ -373,6 +376,10 @@ class Object3D extends EventDispatcher {
 
 			object.dispatchEvent( _addedEvent );
 
+			_childaddedEvent.child = object;
+			this.dispatchEvent( _childaddedEvent );
+			_childaddedEvent.child = null;
+
 		} else {
 
 			console.error( 'THREE.Object3D.add: object not an instance of THREE.Object3D.', object );
@@ -412,6 +419,10 @@ class Object3D extends EventDispatcher {
 			}
 
 			object.dispatchEvent( _removedEvent );
+
+			_childremovedEvent.child = object;
+			this.dispatchEvent( _childremovedEvent );
+			_childremovedEvent.child = null;
 
 		}
 

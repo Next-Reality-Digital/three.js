@@ -3,6 +3,7 @@ export default /* glsl */`
 
 	uniform float envMapIntensity;
 	uniform float flipEnvMap;
+	uniform mat3 envMapRotation;
 
 	uniform float envMapBlend;
 
