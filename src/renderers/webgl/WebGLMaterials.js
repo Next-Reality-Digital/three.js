@@ -475,6 +475,12 @@ function WebGLMaterials( renderer, properties ) {
 
 		}
 
+		if ( material.dispersion > 0 ) {
+
+			uniforms.dispersion.value = material.dispersion;
+
+		}
+
 		if ( material.iridescence > 0 ) {
 
 			uniforms.iridescence.value = material.iridescence;
