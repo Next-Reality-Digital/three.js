@@ -103,9 +103,14 @@ function intersect( object, raycaster, intersects, recursive ) {
 
 	if ( ! object.visible ) return;
 
-	object.raycast( raycaster, intersects );
+	let propagate = true;
 
-	if ( recursive === true ) {
+	const result = object.raycast( raycaster, intersects );
+
+	if ( result === false ) propagate = false;
+
+
+	if ( propagate === true && recursive === true ) {
 
 		const children = object.children;
 

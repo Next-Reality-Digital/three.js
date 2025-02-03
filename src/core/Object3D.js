@@ -5,7 +5,7 @@ import { EventDispatcher } from './EventDispatcher.js';
 import { Euler } from '../math/Euler.js';
 import { Layers } from './Layers.js';
 import { Matrix3 } from '../math/Matrix3.js';
-import * as MathUtils from '../math/MathUtils.js';
+import { generateUUID } from '../math/MathUtils.js';
 
 let _object3DId = 0;
 
@@ -48,7 +48,7 @@ class Object3D extends EventDispatcher {
 
 		Object.defineProperty( this, 'id', { value: _object3DId ++ } );
 
-		this.uuid = MathUtils.generateUUID();
+		this.uuid = generateUUID();
 
 		this.name = '';
 		this.type = 'Object3D';
@@ -364,12 +364,7 @@ class Object3D extends EventDispatcher {
 
 		if ( object && object.isObject3D ) {
 
-			if ( object.parent !== null ) {
-
-				object.parent.remove( object );
-
-			}
-
+			object.removeFromParent();
 			object.parent = this;
 			this.children.push( object );
 			object.matrixWorldNeedsUpdate = true;
@@ -470,9 +465,17 @@ class Object3D extends EventDispatcher {
 
 		object.applyMatrix4( _m1 );
 
-		this.add( object );
+		object.removeFromParent();
+		object.parent = this;
+		this.children.push( object );
 
 		object.updateWorldMatrix( false, true );
+
+		object.dispatchEvent( _addedEvent );
+
+		_childaddedEvent.child = object;
+		this.dispatchEvent( _childaddedEvent );
+		_childaddedEvent.child = null;
 
 		return this;
 
@@ -630,37 +633,26 @@ class Object3D extends EventDispatcher {
 	updateMatrixWorld( forceWorldUpdate, includeInvisible ) {
 
 		if ( ! this.visible && ! includeInvisible ) {
-
 			if ( forceWorldUpdate ) {
-
 				this.matrixWorldNeedsUpdate = true;
-
 			}
-
 			return;
-
 		}
-
-		// Do not recurse upwards, since this is recursing downwards
-		this.updateMatrices( false, forceWorldUpdate, true );
-
-		const children = this.children;
+	
+		this.updateMatrices( /* updateLocal = */ false, forceWorldUpdate, /* updateWorld = */ true );
+	
 		const forceChildrenWorldUpdate = this.childrenNeedMatrixWorldUpdate || forceWorldUpdate;
-
-		for ( let i = 0, l = children.length; i < l; i ++ ) {
-
-			const child = children[ i ];
-
+	
+		const children = this.children;
+		for ( let i = 0, l = children.length; i < l; i++ ) {
+			const child = children[i];
 			if ( child.matrixWorldAutoUpdate === true ) {
-
 				child.updateMatrixWorld( forceChildrenWorldUpdate, includeInvisible );
-
 			}
-
 		}
-
+	
+		// Reset the flag that forces child updates
 		this.childrenNeedMatrixWorldUpdate = false;
-
 	}
 
 
@@ -668,28 +660,29 @@ class Object3D extends EventDispatcher {
 	// patching this for compatibility upstream, namely with Box3.expandToObject and Object3D.attach
 	updateWorldMatrix( updateParents, updateChildren ) {
 
-		this.updateMatrices( false, false, ! updateParents );
-
-		if ( updateChildren ) {
-
-			const children = this.children;
-
-			for ( let i = 0, l = children.length; i < l; i ++ ) {
-
-				const child = children[ i ];
-
-				if ( child.matrixWorldAutoUpdate === true ) {
-
-					child.updateMatrixWorld( false, false );
-
-				}
-
-			}
-
-			this.childrenNeedMatrixWorldUpdate = false;
-
+		// If requested, update our parents first (so that our parent's matrixWorld is up-to-date)
+		if ( updateParents === true && this.parent !== null ) {
+			this.parent.updateWorldMatrix( true, false );
 		}
-
+	
+		// If our local matrix should auto-update, do so now
+		if ( this.matrixAutoUpdate ) {
+			this.updateMatrix();
+		}
+	
+		// Use the custom updateMatrices() method to update our world matrix.
+		// (The third parameter is set to !updateParents so that we don’t double-update the world matrix when our parent was just updated.)
+		this.updateMatrices( /* updateLocal = */ false, /* force = */ false, /* updateWorld = */ ! updateParents );
+	
+		// If requested, update children.
+		if ( updateChildren === true ) {
+			const children = this.children;
+			for ( let i = 0, l = children.length; i < l; i++ ) {
+				// Use updateWorldMatrix for children so that they too perform parent updates if needed.
+				children[i].updateWorldMatrix( false, true );
+			}
+			this.childrenNeedMatrixWorldUpdate = false;
+		}
 	}
 
 	// [HUBS] By the end of this function this.matrix reflects the updated local matrix
@@ -873,7 +866,7 @@ class Object3D extends EventDispatcher {
 				sphereCenter: bound.sphere.center.toArray()
 			} ) );
 
-			object.maxGeometryCount = this._maxGeometryCount;
+			object.maxInstanceCount = this._maxInstanceCount;
 			object.maxVertexCount = this._maxVertexCount;
 			object.maxIndexCount = this._maxIndexCount;
 
@@ -881,6 +874,8 @@ class Object3D extends EventDispatcher {
 			object.geometryCount = this._geometryCount;
 
 			object.matricesTexture = this._matricesTexture.toJSON( meta );
+
+			if ( this._colorsTexture !== null ) object.colorsTexture = this._colorsTexture.toJSON( meta );
 
 			if ( this.boundingSphere !== null ) {
 
