@@ -632,67 +632,68 @@ class Object3D extends EventDispatcher {
 	// includeInvisible - If true, does not ignore non-visible objects.
 	updateMatrixWorld( forceWorldUpdate, includeInvisible ) {
 
+		// Custom: if not visible (and not forcing invisible updates) then simply mark ourselves for update
 		if ( ! this.visible && ! includeInvisible ) {
-
 			if ( forceWorldUpdate ) {
-
 				this.matrixWorldNeedsUpdate = true;
-
 			}
-
 			return;
-
 		}
-
-		// Do not recurse upwards, since this is recursing downwards
-		this.updateMatrices( false, forceWorldUpdate, true );
-
-		const children = this.children;
+	
+		// Update local matrices and our world matrix via the custom updateMatrices() method.
+		// (This call is the Hubs change; updateMatrices() handles the usual multiplication with the parent's matrix.)
+		this.updateMatrices( /* updateLocal = */ false, forceWorldUpdate, /* updateWorld = */ true );
+	
+		// Compute whether our children need a forced update
 		const forceChildrenWorldUpdate = this.childrenNeedMatrixWorldUpdate || forceWorldUpdate;
-
-		for ( let i = 0, l = children.length; i < l; i ++ ) {
-
-			const child = children[ i ];
-
+	
+		// Update all children – note that we pass along our custom flag (includeInvisible)
+		const children = this.children;
+		for ( let i = 0, l = children.length; i < l; i++ ) {
+			const child = children[i];
 			if ( child.matrixWorldAutoUpdate === true ) {
-
 				child.updateMatrixWorld( forceChildrenWorldUpdate, includeInvisible );
-
 			}
-
 		}
-
+	
+		// Reset the flag that forces child updates
 		this.childrenNeedMatrixWorldUpdate = false;
-
 	}
-
-
-	// [HUBS] Updates this function to use updateMatrices(). In general our code should prefer calling updateMatrices() directly,
-	// patching this for compatibility upstream, namely with Box3.expandToObject and Object3D.attach
+	
+	
+	/**
+	 * [HUBS] This merged version of updateWorldMatrix() incorporates:
+	 *  - The official three.js approach of updating parent matrices when requested,
+	 *  - An update of our own local matrix (if matrixAutoUpdate is enabled),
+	 *  - And then calling our custom updateMatrices() method.
+	 *
+	 * (Note that unlike updateMatrixWorld(), this function does not expose an includeInvisible flag.)
+	 */
 	updateWorldMatrix( updateParents, updateChildren ) {
-
-		this.updateMatrices( false, false, ! updateParents );
-
-		if ( updateChildren ) {
-
-			const children = this.children;
-
-			for ( let i = 0, l = children.length; i < l; i ++ ) {
-
-				const child = children[ i ];
-
-				if ( child.matrixWorldAutoUpdate === true ) {
-
-					child.updateMatrixWorld( false, false );
-
-				}
-
-			}
-
-			this.childrenNeedMatrixWorldUpdate = false;
-
+	
+		// If requested, update our parents first (so that our parent's matrixWorld is up-to-date)
+		if ( updateParents === true && this.parent !== null ) {
+			this.parent.updateWorldMatrix( true, false );
 		}
-
+	
+		// If our local matrix should auto-update, do so now
+		if ( this.matrixAutoUpdate ) {
+			this.updateMatrix();
+		}
+	
+		// Use the custom updateMatrices() method to update our world matrix.
+		// (The third parameter is set to !updateParents so that we don’t double-update the world matrix when our parent was just updated.)
+		this.updateMatrices( /* updateLocal = */ false, /* force = */ false, /* updateWorld = */ ! updateParents );
+	
+		// If requested, update children.
+		if ( updateChildren === true ) {
+			const children = this.children;
+			for ( let i = 0, l = children.length; i < l; i++ ) {
+				// Use updateWorldMatrix for children so that they too perform parent updates if needed.
+				children[i].updateWorldMatrix( false, true );
+			}
+			this.childrenNeedMatrixWorldUpdate = false;
+		}
 	}
 
 	// [HUBS] By the end of this function this.matrix reflects the updated local matrix
@@ -876,7 +877,7 @@ class Object3D extends EventDispatcher {
 				sphereCenter: bound.sphere.center.toArray()
 			} ) );
 
-			object.maxGeometryCount = this._maxGeometryCount;
+			object.maxInstanceCount = this._maxInstanceCount;
 			object.maxVertexCount = this._maxVertexCount;
 			object.maxIndexCount = this._maxIndexCount;
 
