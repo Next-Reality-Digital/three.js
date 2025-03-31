@@ -92,6 +92,22 @@ function WebGLUniformsGroups( gl, info, capabilities, state ) {
 		const uniforms = uniformsGroup.uniforms;
 		const cache = uniformsGroup.__cache;
 
+		if ( uniformsGroup.isRawUniformsGroup ) {
+
+			if ( uniformsGroup.autoUpdate || uniformsGroup.needsUpdate ) {
+
+				gl.bindBuffer( gl.UNIFORM_BUFFER, buffer );
+
+				gl.bufferSubData( gl.UNIFORM_BUFFER, 0, uniformsGroup.data );
+
+				gl.bindBuffer( gl.UNIFORM_BUFFER, null );
+
+			}
+
+			return;
+
+		}
+
 		gl.bindBuffer( gl.UNIFORM_BUFFER, buffer );
 
 		for ( let i = 0, il = uniforms.length; i < il; i ++ ) {
