@@ -12,7 +12,6 @@ function WebGLMorphtargets( gl, capabilities, textures ) {
 
 		const objectInfluences = object.morphTargetInfluences;
 
-		if ( capabilities.isWebGL2 === true && false /* casuing issues, disable for now, also see WebGLProgram */ ) {
 		// the following encodes morph targets into an array of data textures. Each layer represents a single morph target.
 
 		const morphAttribute = geometry.morphAttributes.position || geometry.morphAttributes.normal || geometry.morphAttributes.color;
@@ -155,7 +154,6 @@ function WebGLMorphtargets( gl, capabilities, textures ) {
 		program.getUniforms().setValue( gl, 'morphTargetsTexture', entry.texture, textures );
 		program.getUniforms().setValue( gl, 'morphTargetsTextureSize', entry.size );
 
-	}
 	}
 
 	return {
